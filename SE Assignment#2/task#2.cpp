@@ -1,119 +1,147 @@
 #include <iostream>
-#include <vector>
-#include <string>
 using namespace std;
 
-class Insect
-{
-    int total_insects = 0;
-    int resting_insects = 0;
-    string leader;
-    string worker;
 
-public:
-    void engage_combat()
-    {
-        if (0)
-        {
-            cout << "Combat Victory!" << endl;
-        }
-    }
+class AntFarm;
+class Meadow;
 
-    void take_rest()
-    {
-        cout << "Insect resting" << endl;
-    }
 
-    void eat_food()
-    {
-        cout << "Insect eating food" << endl;
-    }
-
-    void begin_building()
-    {
-        cout << "Insect building" << endl;
-    }
-};
-
-class InsectColony
-{
+class Meadow {
 private:
-    string breed;
-    vector<Insect> insect_group;
+    static Meadow* instance;
+    AntFarm* antFarm1;
+    AntFarm* antFarm2;
+
+    Meadow() : antFarm1(NULL), antFarm2(NULL) {} 
 
 public:
-    InsectColony(string br)
-    {
-        breed = br;
+    static Meadow* getInstance() {
+        if (instance==NULL)
+        instance = new Meadow();
+        return instance;
     }
 
-    void insertInsect(Insect &ins)
-    {
-        insect_group.push_back(ins);
-    }
-
+    void spawnAntFarms();
+    void giveResources(int id, const string& resource, int amount);
+    void tick(int ticks);
+    void summary(int id);
 };
 
-class Habitat
-{
+Meadow* Meadow::instance = NULL;
+
+class Ant {
+protected:
+    string type;
+    int strength;
+    int foodConsumption;
+
+public:
+    Ant(const string& t, int s, int f) : type(t), strength(s), foodConsumption(f) {}
+    int getStrength() const { 
+        return strength; 
+    }
+    int getFoodConsumption() const { 
+    return foodConsumption; 
+    }
+    string getType() const { 
+    return type; 
+    }
+};
+
+
+class AntFarm {
 private:
-    static Habitat *instance;
-    vector<InsectColony> colonies;
+    string species;
+    int workers;
+    int warriors;
+    int food;
 
 public:
-    Habitat()
-    {
-        // Example: initialization
+    AntFarm(const string& species) : species(species), workers(0), warriors(0), food(0) {}
+
+    void addResources(const string& resource, int amount) {
+        if (resource == "Food") {
+            food += amount;
+        } else if (resource == "Worker") {
+            workers += amount;
+        } else if (resource == "Warrior") {
+            warriors += amount;
+        }
     }
 
-    void addColony(InsectColony colony)
-    {
-        colonies.push_back(colony);
+    void tick() {
+        int totalFoodConsumption = (workers * 1) + (warriors * 2);
+        food -= totalFoodConsumption;
+        if (food < 0) {
+            cout << "AntFarm " << species << " is starving."<<endl;
+            food = 0;
+        }
+    }
+
+    void printSummary(int id) const {
+        cout << "AntFarm ID: " << id << endl;
+        cout << "Species: " << species << endl;
+        cout << "Food: " << food << endl;
+        cout << "Workers: " << workers << endl;
+        cout << "Warriors: " << warriors << endl;
     }
 };
 
-int main()
-{
-    string input;
-    cout << "Welcome to the Insect Colony Process!\n";
-    cout << "Please choose from the following actions:\n";
-    cout << "1. setup [X Y Type] - Establish a new insect colony.\n";
-    cout << "2. run [N] - Perform N time cycles.\n";
-    cout << "3. allocate [ColonyID Resources Insects] - Distribute supplies or assign insects to a colony.\n";
-    cout << "4. inspect [ColonyID] - View the status of a specific colony.\n";
-    cout << "5. end - Exit the Process.\n";
+void Meadow::spawnAntFarms() {
+    antFarm1 = new AntFarm("Killer");
+    antFarm2 = new AntFarm("Pansy");
+    cout << "Spawned AntFarms: Killer and Pansy"<<endl;
+}
 
-    while (true)
-    {
-        cout << "\nWhat would you like to do? ";
-        getline(cin, input);
-
-        if (input == "end")
-        {
-            cout << "Simulation complete. Goodbye!\n";
-            break;
-        }
-        else if (input.rfind("setup", 0) == 0)
-        {
-            cout << "Creating a new colony of insects...\n";
-        }
-        else if (input.rfind("run", 0) == 0)
-        {
-            cout << "Executing the requested cycles...\n";
-        }
-        else if (input.rfind("inspect", 0) == 0)
-        {
-            cout << "Retrieving colony information...\n";
-        }
-        else if (input.rfind("allocate", 0) == 0)
-        {
-            cout << "Allocating resources and insects to the colony...\n";
-        }
-        else
-        {
-            cout << "Invalid input. Please try again with a valid command.\n";
-        }
+void Meadow::giveResources(int id, const string& resource, int amount) {
+    if (id == 1 && antFarm1) {
+        antFarm1->addResources(resource, amount);
+        cout << "Gave " << amount << " " << resource << " to AntFarm 1."<<endl;
+    } 
+    else if (id == 2 && antFarm2) {
+        antFarm2->addResources(resource, amount);
+        cout << "Gave " << amount << " " << resource << " to AntFarm 2."<<endl;
+    } 
+    else {
+        cout << "Invalid AntFarm ID."<<endl;
     }
+}
+
+void Meadow::tick(int ticks) {
+    for (int t = 0; t < ticks; ++t) {
+        cout << "Tick: " << t + 1 << endl;
+        if (antFarm1) antFarm1->tick();
+        if (antFarm2) antFarm2->tick();
+    }
+}
+
+void Meadow::summary(int id) {
+    if (id == 1 && antFarm1) {
+        antFarm1->printSummary(id);
+    } 
+    else if (id == 2 && antFarm2) {
+        antFarm2->printSummary(id);
+    } 
+    else {
+        cout << "Invalid AntFarm ID."<<endl;
+    }
+}
+
+int main() {
+    Meadow* meadow = Meadow::getInstance();
+    meadow->spawnAntFarms();
+
+    meadow->giveResources(1, "Food", 100);
+    meadow->giveResources(1, "Worker", 30);
+    meadow->giveResources(1, "Warrior", 15);
+
+    meadow->giveResources(2, "Food", 50);
+    meadow->giveResources(2, "Worker", 20);
+
+    meadow->tick(3);
+
+    meadow->summary(1);
+    meadow->summary(2);
 
     return 0;
 }
